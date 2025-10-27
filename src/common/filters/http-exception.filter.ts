@@ -19,10 +19,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     // 3. Include relevant error details without exposing sensitive information
     // 4. Handle different types of errors with appropriate status codes
 
-    this.logger.error(
-      `HTTP Exception: ${exception.message}`,
-      exception.stack,
-    );
+    this.logger.error(`HTTP Exception: ${exception.message}`, exception.stack);
 
     // Basic implementation (to be enhanced by candidates)
     response.status(status).json({
@@ -33,4 +30,4 @@ export class HttpExceptionFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
     });
   }
-} 
+}

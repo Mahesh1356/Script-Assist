@@ -25,13 +25,13 @@ export class LoggingInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap({
-        next: (val) => {
+        next: val => {
           this.logger.log(`Response: ${method} ${url} ${Date.now() - now}ms`);
         },
-        error: (err) => {
+        error: err => {
           this.logger.error(`Error in ${method} ${url} ${Date.now() - now}ms: ${err.message}`);
         },
       }),
     );
   }
-} 
+}

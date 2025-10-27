@@ -16,4 +16,4 @@ import { Task } from './entities/task.entity';
   providers: [TasksService],
   exports: [TasksService],
 })
-export class TasksModule {} 
+export class TasksModule {}

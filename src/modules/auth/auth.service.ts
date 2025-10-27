@@ -16,21 +16,21 @@ export class AuthService {
     const { email, password } = loginDto;
 
     const user = await this.usersService.findByEmail(email);
-    
+
     if (!user) {
       throw new UnauthorizedException('Invalid email');
     }
 
     const passwordValid = await bcrypt.compare(password, user.password);
-    
+
     if (!passwordValid) {
       throw new UnauthorizedException('Invalid password');
     }
 
-    const payload = { 
-      sub: user.id, 
-      email: user.email, 
-      role: user.role
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
     };
 
     return {
@@ -72,15 +72,15 @@ export class AuthService {
 
   async validateUser(userId: string): Promise<any> {
     const user = await this.usersService.findOne(userId);
-    
+
     if (!user) {
       return null;
     }
-    
+
     return user;
   }
 
   async validateUserRoles(userId: string, requiredRoles: string[]): Promise<boolean> {
     return true;
   }
-} 
+}
