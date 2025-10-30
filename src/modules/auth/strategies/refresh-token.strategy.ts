@@ -3,22 +3,28 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../../users/users.service';
-import { JwtPayload, AuthUser } from '../interfaces/auth.interface';
+import { RefreshTokenService } from '../services/refresh-token.service';
+import { RefreshTokenPayload, AuthUser } from '../interfaces/auth.interface';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class RefreshTokenStrategy extends PassportStrategy(Strategy, 'refresh-token') {
   constructor(
     private configService: ConfigService,
     private usersService: UsersService,
+    private refreshTokenService: RefreshTokenService,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromBodyField('refresh_token'),
       ignoreExpiration: false,
-      secretOrKey: configService.get('jwt.secret'),
+      secretOrKey: configService.get('jwt.refreshSecret'),
     });
   }
 
-  async validate(payload: JwtPayload): Promise<AuthUser> {
+  async validate(payload: RefreshTokenPayload): Promise<AuthUser> {
+    if (payload.type !== 'refresh') {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
     const user = await this.usersService.findOne(payload.sub);
 
     if (!user) {

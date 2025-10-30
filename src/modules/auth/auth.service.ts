@@ -1,8 +1,11 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { TokenService } from './services/token.service';
+import { RefreshTokenService } from './services/refresh-token.service';
+import { LoginResponse, RegisterResponse, AuthUser } from './interfaces/auth.interface';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -10,77 +13,88 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly tokenService: TokenService,
+    private readonly refreshTokenService: RefreshTokenService,
   ) {}
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto): Promise<LoginResponse> {
     const { email, password } = loginDto;
 
     const user = await this.usersService.findByEmail(email);
-
-    if (!user) {
-      throw new UnauthorizedException('Invalid email');
-    }
+    if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const passwordValid = await bcrypt.compare(password, user.password);
+    if (!passwordValid) throw new UnauthorizedException('Invalid credentials');
 
-    if (!passwordValid) {
-      throw new UnauthorizedException('Invalid password');
-    }
-
-    const payload = {
-      sub: user.id,
+    const authUser: AuthUser = {
+      id: user.id,
       email: user.email,
+      name: user.name,
       role: user.role,
     };
 
+    const accessToken = this.tokenService.generateAccessToken(authUser);
+    const refreshToken = this.refreshTokenService.generateRefreshToken(authUser.id);
+
     return {
-      access_token: this.jwtService.sign(payload),
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      },
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      user: authUser,
     };
   }
 
-  async register(registerDto: RegisterDto) {
+  async register(registerDto: RegisterDto): Promise<RegisterResponse> {
     const existingUser = await this.usersService.findByEmail(registerDto.email);
 
-    if (existingUser) {
-      throw new UnauthorizedException('Email already exists');
-    }
+    if (existingUser) throw new ConflictException('Email already exists');
 
     const user = await this.usersService.create(registerDto);
 
-    const token = this.generateToken(user.id);
+    const authUser: AuthUser = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    };
+
+    const accessToken = this.tokenService.generateAccessToken(authUser);
+    const refreshToken = this.refreshTokenService.generateRefreshToken(authUser.id);
 
     return {
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      },
-      token,
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      user: authUser,
     };
   }
 
-  private generateToken(userId: string) {
-    const payload = { sub: userId };
-    return this.jwtService.sign(payload);
-  }
-
-  async validateUser(userId: string): Promise<any> {
+  async validateUser(userId: string): Promise<AuthUser | null> {
     const user = await this.usersService.findOne(userId);
 
     if (!user) {
-      return null;
+      throw new UnauthorizedException('User not found');
     }
 
-    return user;
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    };
   }
 
-  async validateUserRoles(userId: string, requiredRoles: string[]): Promise<boolean> {
-    return true;
+  async refreshToken(userId: string): Promise<{ access_token: string; refresh_token: string }> {
+    const user = await this.validateUser(userId);
+
+    const authUser: AuthUser = {
+      id: user!.id,
+      email: user!.email,
+      name: user!.name,
+      role: user!.role,
+    };
+
+    return {
+      access_token: this.tokenService.generateAccessToken(authUser),
+      refresh_token: this.refreshTokenService.generateRefreshToken(authUser.id),
+    };
   }
 }

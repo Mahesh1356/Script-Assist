@@ -5,6 +5,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
+import { TokenService } from './services/token.service';
+import { RefreshTokenService } from './services/refresh-token.service';
 import { UsersModule } from '../users/users.module';
 
 @Module({
@@ -14,19 +17,16 @@ import { UsersModule } from '../users/users.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-        console.log(configService.get('jwt.secret'));
-        return {
-          secret: configService.get('jwt.secret'),
-          signOptions: {
-            expiresIn: configService.get('jwt.expiresIn'),
-          },
-        };
-      },
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get('jwt.secret'),
+        signOptions: {
+          expiresIn: configService.get('jwt.expiresIn'),
+        },
+      }),
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService],
+  providers: [AuthService, JwtStrategy, RefreshTokenStrategy, TokenService, RefreshTokenService],
+  exports: [AuthService, TokenService, RefreshTokenService],
 })
 export class AuthModule {}
