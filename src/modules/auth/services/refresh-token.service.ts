@@ -17,41 +17,4 @@ export class RefreshTokenService {
       secret: this.configService.get('jwt.refreshSecret'),
     });
   }
-
-  verifyRefreshToken(token: string): RefreshTokenPayload {
-    return this.jwtService.verify(token, {
-      secret: this.configService.get('jwt.refreshSecret'),
-    });
-  }
-
-  decodeRefreshToken(token: string): RefreshTokenPayload | null {
-    try {
-      return this.jwtService.decode(token) as RefreshTokenPayload;
-    } catch {
-      return null;
-    }
-  }
-
-  isRefreshTokenValid(token: string): boolean {
-    try {
-      this.verifyRefreshToken(token);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  getRefreshTokenExpiration(token: string): Date | null {
-    try {
-      const decoded = this.decodeRefreshToken(token);
-      return decoded?.exp ? new Date(decoded.exp * 1000) : null;
-    } catch {
-      return null;
-    }
-  }
-
-  isRefreshTokenExpired(token: string): boolean {
-    const expiration = this.getRefreshTokenExpiration(token);
-    return expiration ? expiration < new Date() : true;
-  }
 }
