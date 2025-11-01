@@ -14,6 +14,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { RateLimitGuard } from '../../common/guards/rate-limit.guard';
+import { RateLimit } from '../../common/decorators/rate-limit.decorator';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { AuthUser } from './interfaces/auth.interface';
@@ -21,11 +22,13 @@ import { AuthUser } from './interfaces/auth.interface';
 @ApiTags('auth')
 @Controller('auth')
 @UseGuards(RateLimitGuard)
+@RateLimit({ limit: 10, windowMs: 60000 }) // Default: 10 requests per minute for auth endpoints
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @RateLimit({ limit: 5, windowMs: 60000 }) // Stricter limit for login: 5 requests per minute
   @ApiOperation({ summary: 'User login' })
   @ApiBody({ type: LoginDto })
   @ApiResponse({
@@ -41,6 +44,7 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @RateLimit({ limit: 3, windowMs: 60000 }) // Stricter limit for registration: 3 requests per minute to prevent spam
   @ApiOperation({ summary: 'User registration' })
   @ApiBody({ type: RegisterDto })
   @ApiResponse({
@@ -56,6 +60,7 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @RateLimit({ limit: 20, windowMs: 60000 }) // Moderate limit for refresh: 20 requests per minute
   @UseGuards(RefreshTokenGuard)
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiBody({ type: RefreshTokenDto })

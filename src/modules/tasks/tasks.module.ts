@@ -4,6 +4,8 @@ import { BullModule } from '@nestjs/bullmq';
 import { TasksService } from './tasks.service';
 import { TasksController } from './tasks.controller';
 import { Task } from './entities/task.entity';
+import { RateLimitGuard } from '@common/guards/rate-limit.guard';
+import { CacheService } from '@common/services/cache.service';
 
 @Module({
   imports: [
@@ -13,7 +15,7 @@ import { Task } from './entities/task.entity';
     }),
   ],
   controllers: [TasksController],
-  providers: [TasksService],
+  providers: [TasksService, RateLimitGuard, CacheService],
   exports: [TasksService],
 })
 export class TasksModule {}

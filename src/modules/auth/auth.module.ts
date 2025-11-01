@@ -9,6 +9,8 @@ import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { TokenService } from './services/token.service';
 import { RefreshTokenService } from './services/refresh-token.service';
 import { UsersModule } from '../users/users.module';
+import { RateLimitGuard } from '@common/guards/rate-limit.guard';
+import { CacheService } from '@common/services/cache.service';
 
 @Module({
   imports: [
@@ -26,7 +28,15 @@ import { UsersModule } from '../users/users.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RefreshTokenStrategy, TokenService, RefreshTokenService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    RefreshTokenStrategy,
+    TokenService,
+    RefreshTokenService,
+    RateLimitGuard,
+    CacheService,
+  ],
   exports: [AuthService, TokenService, RefreshTokenService],
 })
 export class AuthModule {}

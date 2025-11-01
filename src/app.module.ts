@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bullmq';
-import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { UsersModule } from './modules/users/users.module';
 import { TasksModule } from './modules/tasks/tasks.module';
@@ -52,18 +51,6 @@ import config from './config';
       }),
     }),
 
-    // Rate limiting
-    ThrottlerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => [
-        {
-          ttl: 60,
-          limit: 10,
-        },
-      ],
-    }),
-
     // Feature modules
     UsersModule,
     TasksModule,
@@ -74,13 +61,12 @@ import config from './config';
     ScheduledTasksModule,
   ],
   providers: [
-    // Inefficient: Global cache service with no configuration options
-    // This creates a single in-memory cache instance shared across all modules
+    // Cache service using Redis for distributed caching and rate limiting
+    // Now supports distributed caching, automatic expiration, and rate limiting
     CacheService,
   ],
   exports: [
-    // Exporting the cache service makes it available to other modules
-    // but creates tight coupling
+    // Export cache service for use in guards and other services
     CacheService,
   ],
 })
