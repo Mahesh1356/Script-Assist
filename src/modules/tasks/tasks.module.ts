@@ -6,6 +6,7 @@ import { TasksController } from './tasks.controller';
 import { Task } from './entities/task.entity';
 import { RateLimitGuard } from '@common/guards/rate-limit.guard';
 import { CacheService } from '@common/services/cache.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { CacheService } from '@common/services/cache.service';
     BullModule.registerQueue({
       name: 'task-processing',
     }),
+    AuthModule,
   ],
   controllers: [TasksController],
   providers: [TasksService, RateLimitGuard, CacheService],

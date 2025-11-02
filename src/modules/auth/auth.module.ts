@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -11,10 +11,11 @@ import { RefreshTokenService } from './services/refresh-token.service';
 import { UsersModule } from '../users/users.module';
 import { RateLimitGuard } from '@common/guards/rate-limit.guard';
 import { CacheService } from '@common/services/cache.service';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Module({
   imports: [
-    UsersModule,
+    forwardRef(() => UsersModule),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -36,7 +37,8 @@ import { CacheService } from '@common/services/cache.service';
     RefreshTokenService,
     RateLimitGuard,
     CacheService,
+    JwtAuthGuard,
   ],
-  exports: [AuthService, TokenService, RefreshTokenService],
+  exports: [AuthService, TokenService, RefreshTokenService, JwtStrategy, JwtAuthGuard],
 })
 export class AuthModule {}

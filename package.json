@@ -1,6 +1,6 @@
 {
   "name": "scriptassist-nestjs-exercise",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "TaskFlow API - NestJS Backend Coding Exercise",
   "author": "ScriptAssist Team",
   "private": true,
