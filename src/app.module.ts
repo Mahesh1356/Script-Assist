@@ -8,9 +8,21 @@ import { TasksModule } from './modules/tasks/tasks.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { TaskProcessorModule } from './queues/task-processor/task-processor.module';
 import { ScheduledTasksModule } from './queues/scheduled-tasks/scheduled-tasks.module';
+import { HealthModule } from './common/controllers/health.module';
 import { CacheService } from './common/services/cache.service';
 import config from './config';
 
+/**
+ * Root application module
+ *
+ * Configures and imports all application modules including:
+ * - Configuration management
+ * - Database connections (PostgreSQL via TypeORM)
+ * - Queue system (BullMQ with Redis)
+ * - Scheduled tasks
+ * - Feature modules (Users, Tasks, Auth)
+ * - Common services (Cache, Health)
+ */
 @Module({
   imports: [
     // Configuration
@@ -59,6 +71,9 @@ import config from './config';
     // Queue processing modules
     TaskProcessorModule,
     ScheduledTasksModule,
+
+    // Health check module
+    HealthModule,
   ],
   providers: [
     // Cache service using Redis for distributed caching and rate limiting

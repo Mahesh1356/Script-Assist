@@ -3,6 +3,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { TasksService } from '../../modules/tasks/tasks.service';
 import { TaskStatus } from '../../modules/tasks/enums/task-status.enum';
+import { QUEUE_CONSTANTS } from '../constants/queue.constants';
 
 interface TaskStatusUpdateData {
   taskId: string;
@@ -16,16 +17,16 @@ interface OverdueTasksNotificationData {
 
 @Injectable()
 @Processor('task-processing', {
-  concurrency: 5, // Process 5 jobs concurrently
+  concurrency: QUEUE_CONSTANTS.PROCESSOR_CONCURRENCY,
   limiter: {
-    max: 10, // Maximum 10 jobs per period
-    duration: 1000, // Per 1 second
+    max: QUEUE_CONSTANTS.RATE_LIMITER_MAX,
+    duration: QUEUE_CONSTANTS.RATE_LIMITER_DURATION_MS,
   },
 })
 export class TaskProcessorService extends WorkerHost {
   private readonly logger = new Logger(TaskProcessorService.name);
-  private readonly MAX_RETRIES = 3;
-  private readonly RETRY_DELAY = 1000; // 1 second
+  private readonly MAX_RETRIES = QUEUE_CONSTANTS.MAX_RETRIES;
+  private readonly RETRY_DELAY = QUEUE_CONSTANTS.RETRY_DELAY_MS;
 
   constructor(private readonly tasksService: TasksService) {
     super();

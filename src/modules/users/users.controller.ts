@@ -21,13 +21,17 @@ import { UserFilterDto } from './dto/user-filter.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RateLimitGuard } from '../../common/guards/rate-limit.guard';
 import { RateLimit } from '../../common/decorators/rate-limit.decorator';
+import { RATE_LIMIT_CONSTANTS } from '../../common/constants/rate-limit.constants';
 import { ValidationPipe } from '../../common/pipes/validation.pipe';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 
 @ApiTags('users')
 @Controller('users')
 @UseGuards(RateLimitGuard)
-@RateLimit({ limit: 50, windowMs: 60000 }) // 50 requests per minute for user endpoints
+@RateLimit({
+  limit: RATE_LIMIT_CONSTANTS.USER_LIMIT,
+  windowMs: RATE_LIMIT_CONSTANTS.USER_WINDOW_MS,
+})
 @UseInterceptors(ClassSerializerInterceptor)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}

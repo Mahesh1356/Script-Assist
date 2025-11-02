@@ -6,12 +6,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task } from '../../modules/tasks/entities/task.entity';
 import { TaskStatus } from '../../modules/tasks/enums/task-status.enum';
+import { OVERDUE_TASKS_CONSTANTS, QUEUE_JOB_OPTIONS } from '../constants/queue.constants';
 
 @Injectable()
 export class OverdueTasksService {
   private readonly logger = new Logger(OverdueTasksService.name);
-  private readonly BATCH_SIZE = 100; // Process 100 tasks per batch
-  private readonly MAX_TASKS_PER_RUN = 1000; // Limit to prevent overwhelming the system
+  private readonly BATCH_SIZE = OVERDUE_TASKS_CONSTANTS.BATCH_SIZE;
+  private readonly MAX_TASKS_PER_RUN = OVERDUE_TASKS_CONSTANTS.MAX_TASKS_PER_RUN;
 
   constructor(
     @InjectQueue('task-processing')
@@ -60,20 +61,7 @@ export class OverdueTasksService {
       let totalQueued = 0;
 
       // Use addBulk to add all batch jobs at once for better performance
-      const jobOptions = {
-        attempts: 3, // Retry up to 3 times
-        backoff: {
-          type: 'exponential',
-          delay: 2000, // Start with 2 seconds
-        },
-        removeOnComplete: {
-          age: 3600, // Keep completed jobs for 1 hour
-          count: 100, // Keep last 100 completed jobs
-        },
-        removeOnFail: {
-          age: 86400, // Keep failed jobs for 24 hours
-        },
-      };
+      const jobOptions = QUEUE_JOB_OPTIONS;
 
       try {
         // Prepare all jobs for bulk insertion

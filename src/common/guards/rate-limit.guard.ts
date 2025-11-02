@@ -11,6 +11,8 @@ import { Observable } from 'rxjs';
 import { createHash } from 'crypto';
 import { CacheService } from '../services/cache.service';
 import { RATE_LIMIT_KEY, RateLimitOptions } from '../decorators/rate-limit.decorator';
+import { RATE_LIMIT_CONSTANTS } from '../constants/rate-limit.constants';
+import { CACHE_NAMESPACES } from '../constants/cache.constants';
 
 /**
  * Rate limit guard using CacheService (Redis) for distributed rate limiting
@@ -26,9 +28,9 @@ import { RATE_LIMIT_KEY, RateLimitOptions } from '../decorators/rate-limit.decor
 export class RateLimitGuard implements CanActivate {
   private readonly logger = new Logger(RateLimitGuard.name);
 
-  // Default rate limit configuration
-  private readonly defaultLimit = 100; // requests per window
-  private readonly defaultWindowMs = 60 * 1000; // 1 minute
+  // Default rate limit configuration from constants
+  private readonly defaultLimit = RATE_LIMIT_CONSTANTS.DEFAULT_LIMIT;
+  private readonly defaultWindowMs = RATE_LIMIT_CONSTANTS.DEFAULT_WINDOW_MS;
 
   constructor(
     private reflector: Reflector,
@@ -57,16 +59,31 @@ export class RateLimitGuard implements CanActivate {
 
   /**
    * Get a hashed identifier for the client
-   * Uses IP address hashed with SHA-256 for privacy and compliance
+   *
+   * Uses IP address hashed with SHA-256 for privacy and compliance.
+   * Handles various proxy configurations by checking multiple headers.
+   *
+   * @param request - Express request object
+   * @returns Hashed identifier string (first 16 characters of SHA-256 hash)
    */
-  private getClientIdentifier(request: any): string {
+  private getClientIdentifier(request: {
+    ip?: string;
+    connection?: { remoteAddress?: string };
+    headers: Record<string, string | string[] | undefined>;
+  }): string {
     // Try to get IP from various sources (behind proxies, load balancers, etc.)
+    const xForwardedFor = request.headers['x-forwarded-for'];
+    const forwardedIp = Array.isArray(xForwardedFor)
+      ? xForwardedFor[0]?.trim()
+      : typeof xForwardedFor === 'string'
+        ? xForwardedFor.split(',')[0]?.trim()
+        : undefined;
+
+    const xRealIp = request.headers['x-real-ip'];
+    const realIp = Array.isArray(xRealIp) ? xRealIp[0] : xRealIp;
+
     const ip =
-      request.ip ||
-      request.connection?.remoteAddress ||
-      request.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-      request.headers['x-real-ip'] ||
-      'unknown';
+      request.ip || request.connection?.remoteAddress || forwardedIp || realIp || 'unknown';
 
     // SOLVED: Hashing IP address for privacy/compliance (was: Problem: Uses IP address directly without any hashing or anonymization; Problem: Security risk: Storing raw IPs without compliance consideration)
     // SOLVED: SHA-256 hash ensures privacy while maintaining uniqueness for rate limiting
@@ -94,8 +111,8 @@ export class RateLimitGuard implements CanActivate {
       // Convert windowMs to seconds for Redis TTL
       const ttlSeconds = Math.ceil(windowMs / 1000);
 
-      // Namespace for rate limiting keys
-      const rateLimitNamespace = 'rate_limit';
+      // Namespace for rate limiting keys (from constants)
+      const rateLimitNamespace = CACHE_NAMESPACES.RATE_LIMIT;
 
       // SOLVED: Using Redis atomic operations instead of arrays - efficient and thread-safe (was: Problem: Inefficient data structure for lookups in large datasets; Problem: Creates a new array for each IP if it doesn't exist; Problem: Filter operation on potentially large array - Every request causes a full array scan)
       // SOLVED: Redis persistence ensures rate limits survive application restarts (was: Problem: No persistence - resets on application restart)

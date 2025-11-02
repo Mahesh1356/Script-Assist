@@ -21,13 +21,17 @@ import { BatchTaskDto } from './dto/batch-task.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { RateLimitGuard } from '../../common/guards/rate-limit.guard';
 import { RateLimit } from '../../common/decorators/rate-limit.decorator';
+import { RATE_LIMIT_CONSTANTS } from '../../common/constants/rate-limit.constants';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ValidationPipe } from '../../common/pipes/validation.pipe';
 
 @ApiTags('tasks')
 @Controller('tasks')
 @UseGuards(JwtAuthGuard, RateLimitGuard)
-@RateLimit({ limit: 100, windowMs: 60000 }) // 100 requests per minute for task endpoints
+@RateLimit({
+  limit: RATE_LIMIT_CONSTANTS.TASK_LIMIT,
+  windowMs: RATE_LIMIT_CONSTANTS.TASK_WINDOW_MS,
+})
 @ApiBearerAuth()
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
